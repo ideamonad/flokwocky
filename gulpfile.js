@@ -4,9 +4,11 @@ var transform = require('vinyl-transform');
 var source = require('vinyl-source-stream');
 var watchify = require( 'watchify' )
 var babel    = require( 'babelify' )
-var gutil = require( 'gulp-util' )
 const through = require('through2')
 const sourcemaps = require( 'gulp-sourcemaps' )
+const rollup = require('rollup')
+const { nodeResolve } = require('@rollup/plugin-node-resolve')
+const commonjs = require('@rollup/plugin-commonjs')
 
 gulp.task('build', function () {
   
@@ -14,7 +16,7 @@ gulp.task('build', function () {
     entries: './js/index.js'
   }).transform( babel.configure({ sourceMaps:false, presets:['es2015']}) )
 
-  b.bundle()
+  return b.bundle()
     .pipe( source('gibberwocky.js') )
     .pipe( gulp.dest( './dist/' ) )
     //.pipe( through.obj((chunk, enc, cb) => {
@@ -23,6 +25,28 @@ gulp.task('build', function () {
     //  //cb(null, chunk)
     //}))
   //b.pipe( source('index.js') ).pipe( gulp.dest( './' ) )
+});
+
+gulp.task('build-es6', async function () {
+  try {
+    const bundle = await rollup.rollup({
+      input: './js/index.js',
+      plugins: [
+        nodeResolve(),
+        commonjs()
+      ]
+    });
+
+    await bundle.write({
+      file: './dist/gibberwocky-es6.js',
+      format: 'es',
+      sourcemap: false
+    });
+
+    console.log('ES6 build completed: gibberwocky-es6.js');
+  } catch (error) {
+    console.error('Rollup build error:', error);
+  }
 });
 
 watchify.args.entries = './js/index.js'
@@ -34,14 +58,16 @@ var b = watchify(
   //.transform( babel.configure({ sourceMaps:true, presets:['es2015']} ) ) 
 )
 b.on( 'update', bundle )
-b.on( 'log', gutil.log )
+b.on( 'log', console.log )
 
 gulp.task('default', bundle)
+
+gulp.task('build-all', gulp.parallel('build', 'build-es6'))
 
 function bundle() {
   const stream = b.bundle()
     .on("error", function(err) {
-      gutil.log("Browserify error:", err);
+      console.log("Browserify error:", err);
     })
     .pipe( source('index.js') )
     .pipe( gulp.dest( './dist/' ) )

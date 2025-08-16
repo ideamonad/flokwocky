@@ -4,10 +4,9 @@
   "description": "Use Gibber inside Max/MSP and Max 4 Live.",
   "main": "js/index.js",
   "dependencies": {
-    "browserify": "^12.0.1",
+    "browserify": "^17.0.0",
     "codemirror": "^5.9.0",
     "genish.js": "^0.3.0",
-    "gulp": "^3.9.0",
     "marked": "^0.3.6",
     "vinyl-transform": "^1.0.0"
   },
@@ -17,15 +16,22 @@
     "babel-preset-es2015": "^6.3.13",
     "babelify": "^7.2.0",
     "big.js": "^3.1.3",
-    "gulp-sourcemaps": "^2.6.1",
-    "gulp-util": "^3.0.7",
+    "gulp": "^4.0.2",
+    "gulp-sourcemaps": "^3.0.0",
+    "rollup": "^4.0.0",
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@rollup/plugin-commonjs": "^25.0.0",
     "teoria": "^2.2.0",
-    "through2": "^2.0.3",
-    "vinyl-source-stream": "^1.1.0",
-    "watchify": "^3.6.1"
+    "through2": "^4.0.2",
+    "vinyl-source-stream": "^2.0.0",
+    "watchify": "^4.0.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "gulp build",
+    "build:es6": "gulp build-es6",
+    "build:all": "gulp build-all",
+    "dev": "gulp"
   },
   "keywords": [
     "gibber",

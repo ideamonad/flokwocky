@@ -30,7 +30,7 @@ gulp.task('build', function () {
 gulp.task('build-es6', async function () {
   try {
     const bundle = await rollup.rollup({
-      input: './js/index.js',
+      input: './js/gibber.js',
       plugins: [
         nodeResolve(),
         commonjs()

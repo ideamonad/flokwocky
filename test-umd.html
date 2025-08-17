@@ -1,0 +1,89 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Gibberwocky</title>
+    <!-- css_insert_start -->
+    <link rel="stylesheet" type="text/css" href="css/codemirror.css">
+    <link rel="stylesheet" type="text/css" href="css/gibber.css">
+    <link rel="stylesheet" type="text/css" href="css/show-hint.css">
+    <link rel="stylesheet" type="text/css" href="css/tabs.microlib.css">
+    <link rel="stylesheet" type="text/css" href="css/vanillatree.css">
+    <!-- css_insert_end -->
+  </head>
+
+  <body>
+    <div id='editor'></div>
+
+    <div id='sidebar'>
+      <div id='splitBar'></div>
+
+      <div id='tabs' class='microlib_tabs'>
+        <div class="microlib_tabs_tab" data-title="console" >
+          <div id='console'></div>
+        </div>
+
+        <div class="microlib_tabs_tab schemas" data-title="schemas">
+          <div id='schemaTabs' class='microlib_tabs'>
+            <div class="microlib_tabs_tab" data-title="lom">
+              <div id='lomView'></div>
+            </div>
+
+            <div class="microlib_tabs_tab" data-title="mom">
+              <div id='momView'></div>
+            </div>
+          </div>
+        </div>
+        <div class="microlib_tabs_tab demos" data-title="demos">
+          <div id='demoTabs' class='microlib_tabs'>
+            <div class="microlib_tabs_tab" data-title="live demos">
+              <div id='liveDemosView'></div>
+            </div>
+
+            <div class="microlib_tabs_tab" data-title="max demos">
+              <div id='maxDemosView'></div>
+            </div>
+
+            <div class="microlib_tabs_tab" data-title="midi demos">
+              <div id='midiDemosView'></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="microlib_tabs_tab" data-title="config">
+          <div id='configView'>
+            <!--<label>cc modulation output rate (in Hz):</label><br>-->
+            <!--<input id='modulationRate' value=60></input><br>-->
+            <h4>Clock sync:</h4>
+            <input type='radio' id='liveSyncRadio' name='sync' checked>Live</input><br>
+            <input type='radio' id='maxSyncRadio' name='sync'>Max/MSP</input><br>
+            <input type='radio' id='clockSyncRadio' name='sync'>MIDI Clock</input><br>     
+            <input type='radio' id='internalSyncRadio' name='sync'>Internal</input>
+
+            <h4>MIDI I/O</h4>
+            <label>MIDI input (clock):</label><br><select id='midiInputSelect'></select><br>
+            <label>MIDI output:</label><br><select id='midiOutputSelect'></select><br>
+          </div>
+        </div>
+
+        <div class="microlib_tabs_tab" data-title="help" >
+          <div id="help">
+            <p>For a complete description of the gibberwocky API,
+            see the <a href='http://gibberwocky.cc/reference'>gibberwocky reference</a>. Otherwise
+            the various tutorial are the best place to get started.
+            </p>
+
+            <p>For questions, answers, and announcements try the <a href="http://lurk.org/groups/gibber/">mailing list</a> or
+            the <a href="https://livecode.slack.com/messages/gibber/">gibber Slack channel</a> for more informal discussion. If you
+            aren't already a member of the Live Coding Slack group there's a <a href="http://live-code-slack.herokuapp.com">site that 
+              generates automatic invites</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+      <!-- js_insert_start -->
+      <script src="dist/gibberwocky.js"></script>
+      <!-- js_insert_end -->
+
+  </body>
+
+</html>

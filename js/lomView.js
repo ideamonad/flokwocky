@@ -5,8 +5,9 @@ let Gibber = null, count = -1
 let lomView = {
   tree: null,
 
-  init( _gibber ) {
+  init( _gibber, domElement ) {
     Gibber = _gibber
+    this.domElement = domElement
     this.setup()
     this.create()
 
@@ -16,9 +17,14 @@ let lomView = {
   },
 
   setup() {
-    document.querySelector( '#lomView' ).innerHTML = ''
+    // 检查是否有注入的DOM元素
+    if (!this.domElement) {
+      return;
+    }
+    
+    this.domElement.innerHTML = ''
 
-    this.tree = new VanillaTree('#lomView', {
+    this.tree = new VanillaTree(this.domElement, {
       placeholder: ''
       //contextmenu: [{
       //  label: 'Label 1',

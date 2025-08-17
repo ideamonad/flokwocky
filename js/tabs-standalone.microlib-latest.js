@@ -100,10 +100,11 @@ function findFromElement(element, searchItem) {
     return results;
 }
 
-var MicroTabs = function MicroTabs(element) {
-    if(!element || (typeof element !== 'string' && element === Object(element))) {
+var MicroTabs = function MicroTabs(element) {    
+    if(!element || (typeof element !== 'string' && element !== Object(element))) {
         throw new TypeError('Element is expected to be of type string or object.');
     }
+
 
     if(typeof element === 'string') {
         if(element.indexOf(0) === '#') {

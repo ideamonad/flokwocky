@@ -25,39 +25,92 @@ let Environment = {
   suppressErrors:false,
   isConnected:false,
 
-  init( gibber ) {
+  init( gibber, domElements ) {
     Gibber = gibber
+    
+    // 设置默认值，兼容ES5
+    domElements = domElements || {};
 
     this.codeMarkup = this.codeMarkup( Gibber )
+
+    // 注册DOM元素
+    this.registerDOMElements(domElements);
 
     this.createCodeMirror()   
     this.createSidePanel()
     this.setupSplit()
-    this.sidebar = document.querySelector( '#sidebar' )
-    this.sidebar.isVisible = 1
+    
+    // 设置侧边栏状态
+    if (this.sidebar) {
+      this.sidebar.isVisible = 1
+    }
+    
     //this.lomView.init( Gibber )
     this.animationScheduler.init( Gibber )
     this.codeMarkup.init()
-    this.editorWidth = document.querySelector( '#editor' ).style.width
+    
+    // 获取编辑器宽度
+    if (this.editor) {
+      this.editorWidth = this.editor.style.width
+    }
+    
     this.Storage.init()
 
     this.setupClockSelection()
     //this.toggleSidebar()
   },
 
+  // 注册DOM元素
+  registerDOMElements: function(elements) {
+    this.sidebar = elements.sidebar || null;
+    this.editor = elements.editor || null;
+    this.console = elements.console || null;
+    this.splitBar = elements.splitBar || null;
+    this.tabsDiv = elements.tabs || null;
+    this.demoTabsDiv = elements.demoTabs || null;
+    this.schemaTabsDiv = elements.schemaTabs || null;
+    this.lomViewDiv = elements.lomView || null;
+    this.momViewDiv = elements.momView || null;
+    this.maxSyncRadio = elements.maxSyncRadio || null;
+    this.liveSyncRadio = elements.liveSyncRadio || null;
+    this.maxDemosView = elements.maxDemosView || null;
+    this.liveDemosView = elements.liveDemosView || null;
+    this.consoleList = elements.consoleList || null;
+  },
+
   setServer( server ) {
     // only reset tutorial view / change sync on first connection... reconnects don't trigger this
     if( this.isConnected === false ) {
       if( server === 'max' ) {
-        Environment.__eventFire( Environment.schematabs._element[0].firstElementChild.firstElementChild.nextSibling, 'click' )
-        Environment.__eventFire( Environment.demotabs._element[0].firstElementChild.firstElementChild.nextSibling, 'click' )
-        Environment.__eventFire( document.querySelector('#maxSyncRadio'), 'click' )
-        Environment.__eventFire( document.querySelector('#maxDemosView').firstElementChild.firstElementChild, 'click' )
+        // 添加安全检查
+        if (Environment.schematabs && Environment.schematabs._element && Environment.schematabs._element[0]) {
+          Environment.__eventFire( Environment.schematabs._element[0].firstElementChild.firstElementChild.nextSibling, 'click' )
+        }
+        if (Environment.demotabs && Environment.demotabs._element && Environment.demotabs._element[0]) {
+          Environment.__eventFire( Environment.demotabs._element[0].firstElementChild.firstElementChild.nextSibling, 'click' )
+        }
+        if (this.maxSyncRadio) {
+          Environment.__eventFire( this.maxSyncRadio, 'click' )
+        }
+        if (this.maxDemosView) {
+          Environment.__eventFire( this.maxDemosView.firstElementChild.firstElementChild, 'click' )
+        }
       }else if( server === 'live' ) {
-        Environment.__eventFire( Environment.demotabs._element[0].firstElementChild.firstElementChild, 'click' )
-        Environment.__eventFire( Environment.schematabs._element[0].firstElementChild.firstElementChild, 'click' )
-        Environment.__eventFire( document.querySelector('#liveSyncRadio'), 'click' )
-        Environment.__eventFire( document.querySelector('#liveDemosView').firstElementChild.firstElementChild, 'click' )
+        // 添加安全检查
+        // if (Environment.demotabs && Environment.demotabs._element && Environment.demotabs._element[0]) 
+        {
+          Environment.__eventFire( Environment.demotabs._element.firstElementChild.firstElementChild, 'click' )
+        }
+        // if (Environment.schematabs && Environment.schematabs._element && Environment.schematabs._element[0])
+        {
+          Environment.__eventFire( Environment.schematabs._element.firstElementChild.firstElementChild, 'click' )
+        }
+        if (this.liveSyncRadio) {
+          Environment.__eventFire( this.liveSyncRadio, 'click' )
+        }
+        if (this.liveDemosView) {
+          Environment.__eventFire( this.liveDemosView.firstElementChild.firstElementChild, 'click' )
+        }
       }
       this.isConnected = true
     }
@@ -74,12 +127,23 @@ let Environment = {
   },
 
   createSidePanel() {
-    this.tabs = new ML.Tabs( '#tabs' )
-    this.demotabs = new ML.Tabs( '#demoTabs' )
-    this.schematabs = new ML.Tabs( '#schemaTabs' )
+    // 检查是否有必要的DOM元素
+    if (!this.tabsDiv || !this.demoTabsDiv || !this.schemaTabsDiv) {
+      return;
+    }
+    
+    // console.log(Object(this.tabsDiv), this.demoTabsDiv, this.schemaTabsDiv);
+
+    this.tabs = new ML.Tabs( this.tabsDiv )
+    this.demotabs = new ML.Tabs( this.demoTabsDiv )
+    this.schematabs = new ML.Tabs( this.schemaTabsDiv )
 
     this.createConsole()
     this.createDemoLists()
+  },
+
+  initLomView(gibber) {
+    this.lomView.init( gibber, this.lomViewDiv )
   },
 
   clear() {
@@ -90,9 +154,14 @@ let Environment = {
   },
   
   setupSplit() {
-    let splitDiv = document.querySelector( '#splitBar' ),
-        editor   = document.querySelector( '#editor'   ),
-        sidebar  = document.querySelector( '#sidebar'  ),
+    // 检查是否有必要的DOM元素
+    if (!this.splitBar || !this.editor || !this.sidebar) {
+      return;
+    }
+    
+    let splitDiv = this.splitBar,
+        editor   = this.editor,
+        sidebar  = this.sidebar,
         mousemove, mouseup
 
     mouseup = evt => {
@@ -118,16 +187,24 @@ let Environment = {
   setupClockSelection() {
     const syncs = ['max','live','clock']
     for( let sync of syncs ) {
-      document.querySelector( '#' + sync + 'SyncRadio' ).onclick = ()=> {
-        Gibber.Scheduler.__sync__ = sync
-        localStorage.setItem('sync', sync)
+      var radioElement = this[sync + 'SyncRadio'];
+      if (radioElement) {
+        radioElement.onclick = ()=> {
+          Gibber.Scheduler.__sync__ = sync
+          localStorage.setItem('sync', sync)
+        }
       }
     }
   },
 
   createCodeMirror() {
+    // 检查是否有编辑器元素
+    if (!this.editor) {
+      return;
+    }
+    
     CodeMirror.keyMap.gibber = this.keymap
-    this.codemirror = CodeMirror( document.querySelector('#editor'), {
+    this.codemirror = CodeMirror( this.editor, {
       mode:'javascript', 
       keyMap:'gibber',
       autofocus:true, 
@@ -150,9 +227,11 @@ let Environment = {
     list.setAttribute( 'id', 'console_list' )
 
     Environment.consoleList = list
-    Environment.consoleDiv = document.querySelector( '#console' )
+    Environment.consoleDiv = this.console
 
-    Environment.consoleDiv.appendChild( list )
+    if (Environment.consoleDiv) {
+      Environment.consoleDiv.appendChild( list )
+    }
     
     Environment.overrideError()
   },
@@ -172,8 +251,10 @@ let Environment = {
   createDemoLists() {
 
     for( let type of types ) {
-      let container = document.querySelector(`#${type}DemosView`),
-          list = document.createElement( 'ul' )
+      var container = this[type + 'DemosView'];
+      if (!container) continue;
+      
+      let list = document.createElement( 'ul' )
 
       for( let demoName in Gibber.Examples[ type ] ) {
         let li = document.createElement( 'li' ),
@@ -232,7 +313,9 @@ let Environment = {
   },
 
   clearConsole() {
-    document.querySelector( '#console_list' ).innerHTML = ''
+    if (this.consoleList) {
+      this.consoleList.innerHTML = ''
+    }
   },
 
   keymap : {
@@ -355,17 +438,21 @@ let Environment = {
   },
 
   toggleSidebar() {
-    Environment.sidebar.isVisible = !Environment.sidebar.isVisible
-    let editor = document.querySelector( '#editor' )
-    if( !Environment.sidebar.isVisible ) {
-      Environment.editorWidth = editor.style.width
+    // 检查是否有必要的DOM元素
+    if (!this.sidebar || !this.editor) {
+      return;
+    }
+    
+    this.sidebar.isVisible = !this.sidebar.isVisible
+    let editor = this.editor
+    if( !this.sidebar.isVisible ) {
+      this.editorWidth = editor.style.width
       editor.style.width = '100%'
     }else{
-      editor.style.width = Environment.editorWidth
+      editor.style.width = this.editorWidth
     }
 
-    Environment.sidebar.style.display = Environment.sidebar.isVisible ? 'block' : 'none'
-
+    this.sidebar.style.display = this.sidebar.isVisible ? 'block' : 'none'
   },
 
  	getSelectionCodeColumn( cm, findBlock ) {

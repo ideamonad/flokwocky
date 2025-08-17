@@ -56,13 +56,13 @@ let Gibber = {
     this.Utility.export( window )
   },
 
-  init(shouldCreateEnvironment=true ) {
+  init(shouldCreateEnvironment=true, domElements ) {
     this.isStandalone = shouldCreateEnvironment
 
     this.$   = Gibber.Utility.create
 
     if( this.isStandalone === true ) {
-      this.Environment.init( Gibber )
+      this.Environment.init( Gibber, domElements )
     }
 
     this.Theory.init( Gibber )
@@ -318,10 +318,12 @@ let Gibber = {
       if( p.properties !== null && p.properties.quantized === 1 ) _v = Math.round( _v )
 
       const hasGen = Gibber.__gen.enabled
-
+      
       if( _v !== undefined ) {
-        _v.__client = mode
-
+        if(typeof _v === 'object') {
+          _v.__client = mode
+        }
+        
         if( typeof _v === 'object' && _v.isGen ) {
           let __v = hasGen === true ? _v.render( 'gen', mode ) : _v.render( 'genish', mode )
 
@@ -421,7 +423,10 @@ let Gibber = {
           v = hasGen === true ? __v : _v
         }else{
           v = typeof _v === 'object' && _v.isGen ? ( hasGen === true ? _v.render( 'gen', mode ) : _v.render('genish', mode ) ) : _v
-          v.__client = mode
+          if(typeof v === 'object') {
+            v.__client = mode
+          }
+          
           if( v.isGen ) {
             if( hasGen ) {
               if( mode === 'live' ) {

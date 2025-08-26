@@ -16,7 +16,11 @@ module.exports = ( patternObject, marker, className, cm ) => {
 
     cm.replaceRange( val, pos.from, pos.to )
 
-    if( patternObject.commentMarker ) patternObject.commentMarker.clear()
+    if( patternObject.commentMarker ) {
+      //soloist
+      patternObject.commentMarker.clear();
+      delete patternObject.commentMarker;
+    }
 
     patternObject.commentMarker = cm.markText( pos.from, end, { className, atomic:false })
   }

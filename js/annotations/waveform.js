@@ -10,6 +10,9 @@ const Waveform = {
   widgets: { dirty:false },
   
   createWaveformWidget( line, closeParenStart, ch, isAssignment, node, cm, patternObject, track, isSeq=true ) {
+    // console.log("-----createWaveformWidget");
+    // console.log(new Error().stack);
+
     let widget = document.createElement( 'canvas' )
     widget.padding = 40
     widget.waveWidth = 60
@@ -23,7 +26,8 @@ const Waveform = {
     //widget.style.borderLeft = '1px solid #666'
     //widget.style.borderRight = '1px solid #666'
     widget.setAttribute( 'width', widget.padding * 2 + widget.waveWidth )
-    widget.setAttribute( 'height', 13 )
+    // widget.setAttribute( 'height', 13 )
+    widget.setAttribute( 'height', 26 )
     widget.ctx.fillStyle = COLORS.FILL 
     widget.ctx.strokeStyle = COLORS.STROKE
     widget.ctx.font = '10px monospace'
@@ -35,16 +39,19 @@ const Waveform = {
     widget.max = -10000
 
     if( widget.gen === null || widget.gen === undefined ) {
-      if( node.expression !== undefined && node.expression.type === 'AssignmentExpression' ) {
+      if( node.expression !== undefined 
+        && node.expression.type === 'AssignmentExpression' ) {
         isAssignment = true
         
         widget.gen = window[ node.expression.left.name ]
 
         if( widget.gen.widget !== undefined ) {
+          // 移除旧的widget
           widget.gen.widget.parentNode.removeChild( widget.gen.widget )
         }
         widget.gen.widget = widget
-      }else if( node.type === 'CallExpression' ) {
+      }
+      else if( node.type === 'CallExpression' ) {
         const state = cm.__state
         
         if( node.callee.name !== 'Lookup' ) {
@@ -53,7 +60,8 @@ const Waveform = {
           let wave
           if( state.length > 2 ) {
             wave = track[ node.callee.object.property.value][ node.arguments[2].value ] 
-          }else{
+          }
+          else{
             wave = track() 
           }
 
@@ -63,14 +71,16 @@ const Waveform = {
             //widget.gen.widget = widget
           }
           isAssignment = true
-        }else{
+        }
+        else{
           widget.gen = patternObject
         }
         //if( seq !== undefined && seq.timings.type === 'WavePattern' ) {
           
         //}
       } 
-    }else{
+    }
+    else{
       if( widget.gen.widget !== undefined && widget.gen.widget !== widget ) {
         isAssignment = true
         //widget.gen = window[ node.expression.left.name ]
@@ -95,6 +105,15 @@ const Waveform = {
     //  }
     //}
 
+    // soloist: shouldn't clear old widget?
+    if( widget.gen !== null ) {      
+      const oldWidget = Waveform.widgets[ widget.gen.paramID ];
+      console.log("oldWidget", oldWidget);
+      if(null !== oldWidget && oldWidget !== undefined)  {
+        oldWidget.clear();
+      }
+    }
+    
     if( replaced === false ) {
       widget.mark = cm.markText({ line, ch:ch }, { line, ch:ch+1 }, { replacedWith:widget })
       widget.mark.__clear = widget.mark.clear
@@ -112,10 +131,13 @@ const Waveform = {
 
     widget.clear = ()=> widget.mark.clear() 
 
-    if( widget.gen !== null ) {
+    if( widget.gen !== null ) {      
       //console.log( 'paramID = ', widget.gen.paramID ) 
+      // 在这儿保存canvas
       Waveform.widgets[ widget.gen.paramID ] = widget
       widget.gen.widget = widget
+
+      console.log(widget.gen.paramID, Waveform.widgets);
     }
     
     if( patternObject !== null ) {
@@ -192,7 +214,6 @@ const Waveform = {
       
 
       if( typeof widget === 'object' && widget.ctx !== undefined ) {
-
         widget.ctx.fillStyle = COLORS.FILL
         widget.ctx.fillRect( 0,0, widget.width, widget.height )
 

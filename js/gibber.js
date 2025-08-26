@@ -54,6 +54,8 @@ let Gibber = {
 
     this.Theory.export( window )
     this.Utility.export( window )
+  
+    window.Gibber = this;
   },
 
   init(shouldCreateEnvironment=true, domElements ) {
@@ -63,6 +65,9 @@ let Gibber = {
 
     if( this.isStandalone === true ) {
       this.Environment.init( Gibber, domElements )
+    }
+    else {
+      this.Environment.initVisualization( Gibber)
     }
 
     this.Theory.init( Gibber )
@@ -140,6 +145,8 @@ let Gibber = {
   },
 
   clear() {
+    console.log("-----Gibber.clear");
+
     for( let i = 0; i < this.Seq._seqs.length; i++ ){
       this.Seq._seqs[ i ].clear()
     }
@@ -158,10 +165,10 @@ let Gibber = {
       }, 250 )
     }
     Gibber.Scheduler.clear()
-    Gibber.Gen.clear()
+    Gibber.Gen.clearAll()
     Gibber.Environment.clear()
     Gibber.publish( 'clear' )
-    Gibber.initSingletons( window )
+    // Gibber.initSingletons( window )
   },
 
   createPubSub() {
@@ -204,7 +211,11 @@ let Gibber = {
 
       if( obj.sequences[ methodName ] === undefined ) obj.sequences[ methodName ] = []
 
-      if( obj.sequences[ methodName ][ id ] ) obj.sequences[ methodName ][ id ].clear()
+      if( obj.sequences[ methodName ][ id ] ){
+        // soloist
+        obj.sequences[ methodName ][ id ].clear();
+        delete obj.sequences[ methodName ][ id ];
+      }
 
       obj.sequences[ methodName ][ id ] = seq = Gibber.Seq( values, timings, overrideName, obj, priority, mode )
 
@@ -333,33 +344,65 @@ let Gibber = {
           if( hasGen ) {
             _v.paramID = __id
             __v.assignTrackAndParamID( trackID, __id ) 
-          }else{
+          }
+          else{
             Gibber.__gen.assignTrackAndParamID.call( _v, trackID, __id )
           }
           
           // if a gen is not already connected to this parameter, push
           const prevGen = Gibber.Gen.connected.find( e => e.paramID === __id )
           const genAlreadyAssigned = prevGen !== undefined
-          if( genAlreadyAssigned === false && mode !== 'midi' ) {
+
+          // soloist: why not always push?
+          // if( genAlreadyAssigned === false && mode !== 'midi' ) {
+          if( mode !== 'midi' ) {
             Gibber.Gen.connected.push( __v )
+
+            console.log("!!!after push");
+            console.log(Gibber.Gen.connected.filter(
+              e => e.paramID === __id));
           }
 
-
           if( hasGen === true && mode !== 'midi' ) { 
-            if( mode === 'live' ) {
-              Gibber.Communication.send( `gen ${parameter.id} "${__v.out()}"`, 'live' )
-            }else{
-              Gibber.Communication.send( `sig ${parameter.id} expr "${__v.out()}"`, 'max' )
-            } 
+            // soloist
+            // shouldn't it be clear first?
             if( genAlreadyAssigned === true ) {
-              prevGen.clear()
-              prevGen.shouldStop = true
+              console.log("!!!before clear");
+              console.log(Gibber.Gen.connected.filter(
+                e => e.paramID === __id));
+
+              // soloist: 为什么做了clear会导致在线执行后gen停止？
+              // prevGen.clear()
+              // prevGen.shouldStop = true
+
+              console.log("!!!before splice");
+              console.log(Gibber.Gen.connected.filter(
+                e => e.paramID === __id));
+
               const idx = Gibber.Gen.connected.findIndex( e => e.paramID === __id )
               Gibber.Gen.connected.splice( idx, 1 )
+
+              console.log("!!!after splice");
+              console.log(Gibber.Gen.connected.filter(
+                e => e.paramID === __id));
+  
             }
-          }else{
+
+            if( mode === 'live' ) {
+              Gibber.Communication.send( `gen ${parameter.id} "${__v.out()}"`, 'live' )
+              
+              // debug
+              // Gibber.Communication.send( `ugen ${parameter.id}`, 'live' )
+              // Gibber.Communication.send( `gen ${parameter.id} "${__v.out()}"`, 'live' )
+            }
+            else{
+              Gibber.Communication.send( `sig ${parameter.id} expr "${__v.out()}"`, 'max' )
+            } 
+          }
+          else{
             if( genAlreadyAssigned === true ) {
-              prevGen.clear()
+              // soloist
+              // prevGen.clear()
               prevGen.shouldStop = true
               const idx = Gibber.Gen.connected.findIndex( e => e.paramID === __id )
               Gibber.Gen.connected.splice( idx, 1 )
@@ -398,12 +441,14 @@ let Gibber = {
               if( hasGen ) {
                 Gibber.Communication.send( `ungen ${parameter.id}`, 'live' )
                 Gibber.Communication.send( `set ${parameter.id} ${_v.shouldKill.final}` )
-              }else{
+              }
+              else{
                 Gibber.Communication.send( `ungen ${parameter.id}` )
                 //_v.wavePattern.clear()
 
                 const prevGen = Gibber.Gen.connected.find( e => e.paramID === parameter.id )
-                prevGen.clear()
+                // soloist
+                // prevGen.clear()
                 _v.patterns[0].shouldStop = true
                 const idx = Gibber.Gen.connected.findIndex( e => e.paramID === parameter.id )
                 Gibber.Gen.connected.splice( idx, 1 )
@@ -421,7 +466,8 @@ let Gibber = {
           }
           
           v = hasGen === true ? __v : _v
-        }else{
+        }
+        else{
           v = typeof _v === 'object' && _v.isGen ? ( hasGen === true ? _v.render( 'gen', mode ) : _v.render('genish', mode ) ) : _v
           if(typeof v === 'object') {
             v.__client = mode
@@ -444,13 +490,15 @@ let Gibber = {
          
           if( mode === 'live' ) {
             Gibber.Communication.send( `set ${parameter.id} ${v}`, 'live' )
-          }else if( mode === 'max' ) {
+          }
+          else if( mode === 'max' ) {
             // how to know if this is a signal? shouldn't be assuming this.
             if( parameter !== null ) {
               Gibber.Communication.send( `set ${parameter} ${methodName} ${v}`, 'max' ) 
             }
             // Gibber.Communication.send( `sig ${parameter.id} expr "out1=${v};"`, 'max' )
-          }else if( mode === 'midi' ) {
+          }
+          else if( mode === 'midi' ) {
             let msg = [ 0xb0 + _trackID, parameter, v ]
 
             const __id = isNaN( parameter ) ? parameter.id : parameter+'0000'+_trackID
@@ -461,13 +509,14 @@ let Gibber = {
               const idx = Gibber.Gen.connected.findIndex( e => e.paramID === __id )
               Gibber.Gen.connected.splice( idx, 1 )
               Gibber.MIDI.send( msg, 100 )
-            }else{
+            }
+            else{
               Gibber.MIDI.send( msg, 0 )
             }
-
           }
         }
-      }else{
+      }
+      else{
         return v
       }
     }

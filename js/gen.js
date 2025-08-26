@@ -133,7 +133,12 @@ let Gen  = {
     }
   },
 
-  clear() {
+  // soloist added
+  clearAll() {
+    console.log("****** gen clearAll");
+    console.log(Gibber.Communication.connected);
+    console.log(new Error().stack);
+
     for( let key in Gibber.Communication.connected ) {
       if( Gibber.Communication.connected[ key ] === true ) {
         for( let ugen of Gen.connected ) {
@@ -143,6 +148,16 @@ let Gen  = {
     }
 
     Gen.connected.length = 0
+  },
+
+  // soloist changed
+  clear() {
+    console.log("****** gen clear");
+    // console.log(new Error().stack);
+
+    const ugen = this;
+    console.log(ugen);
+    Gibber.Communication.send( `ungen ${ugen.paramID}`, ugen.__client )
   },
 
   constants: {

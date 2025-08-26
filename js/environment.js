@@ -11,9 +11,9 @@ require( '../node_modules/codemirror/addon/hint/javascript-hint.js' )
 require( './tabs-standalone.microlib-latest.js' )
 
 const types = [ 'live', 'max', 'midi' ]
+let codeMarkup = require( './codeMarkup.js' );
 
 let Environment = {
-  codeMarkup: require( './codeMarkup.js' ),
   debug: false,
   _codemirror: CodeMirror,
   animationScheduler: require( './animationScheduler.js' ),
@@ -25,13 +25,20 @@ let Environment = {
   suppressErrors:false,
   isConnected:false,
 
+  initVisualization(gibber) {
+    Gibber = gibber
+    this.codeMarkup = codeMarkup( Gibber );
+    this.animationScheduler.init( Gibber )
+    this.codeMarkup.init()
+  },
+
   init( gibber, domElements ) {
     Gibber = gibber
     
     // 设置默认值，兼容ES5
     domElements = domElements || {};
 
-    this.codeMarkup = this.codeMarkup( Gibber )
+    this.codeMarkup = codeMarkup( Gibber )
 
     // 注册DOM元素
     this.registerDOMElements(domElements);
@@ -79,7 +86,14 @@ let Environment = {
   },
 
   setServer( server ) {
+    // soloist
+    if (!this.isStandalone) {
+      this.isConnected = true;
+      return;
+    }
+    
     // only reset tutorial view / change sync on first connection... reconnects don't trigger this
+    
     if( this.isConnected === false ) {
       if( server === 'max' ) {
         // 添加安全检查
@@ -147,7 +161,8 @@ let Environment = {
   },
 
   clear() {
-    if( Gibber !== null && Gibber.isStandalone === true ) {
+    // if( Gibber !== null && Gibber.isStandalone === true ) {
+    if( Gibber !== null) {
       this.codeMarkup.clear()
       this.animationScheduler.clear()
     }
@@ -318,90 +333,78 @@ let Environment = {
     }
   },
 
+  // 统一的代码执行函数
+  executeCode(cm, options = {}) {
+    const {
+      immediate = false,        // 是否立即执行
+      findBlock = false,        // 是否查找完整代码块
+      bindTrack = false,         // 是否绑定到轨道
+    } = options
+
+    try {
+      // 获取代码
+      const selectedCode = Environment.getSelectionCodeColumn(cm, findBlock)
+      
+      // 执行代码逻辑
+      const executionResult = Environment.executeCodeLogic(selectedCode.code, bindTrack, immediate)      
+      this.visualizeCode(cm, selectedCode.selection, selectedCode.code, immediate);
+
+      return { 
+        success: true, 
+        selectedCode, 
+        executionResult 
+      }
+    } catch (e) {
+      console.log(e)
+      Environment.log('ERROR', e)
+      return { success: false, error: e }
+    }
+  },
+
+  visualizeCode(cm, selection, code, immediate) {
+    try {
+      // 高亮显示
+      // Environment.flash(cm, selection)
+
+      // 执行代码标记
+      Environment.markupCode(code, selection, cm, null, immediate)
+
+      return { 
+        success: true, 
+      }
+    } catch (e) {
+      console.log(e)
+      Environment.log('ERROR', e)
+      return { success: false, error: e }
+    }
+  },
+
   keymap : {
     fallthrough:'default',
 
     // execute now
     'Shift-Enter'(cm) {
-      try {
-        const selectedCode = Environment.getSelectionCodeColumn( cm, false )
-        const func = new Function( selectedCode.code )
-
-        Environment.flash( cm, selectedCode.selection )
-
-        func()
-      }catch( e ) {
-        console.log( e )
-        Environment.log( 'error with immediately executed code:', e )
-      }
+      Environment.executeCode(cm, { 
+        immediate: true, 
+        findBlock: false, 
+        bindTrack: false 
+      })
     },
 
-    'Ctrl-Enter'( cm ) {
-      try {
-        const selectedCode = Environment.getSelectionCodeColumn( cm, false )
-
-        Environment.flash( cm, selectedCode.selection )
-        
-        const func = new Function( selectedCode.code ).bind( Gibber.currentTrack ),
-              markupFunction = () => {
-                Environment.codeMarkup.process( 
-                  selectedCode.code, 
-                  selectedCode.selection, 
-                  cm, 
-                  Gibber.currentTrack 
-                ) 
-              }
-        
-        markupFunction.origin  = func
-
-        const isConnected = Gibber.Communication.connected.live || Gibber.Communication.connected.max
-        if( !Environment.debug && isConnected === true) {
-          Gibber.Scheduler.functionsToExecute.push( func )
-          if( Environment.annotations === true )
-            Gibber.Scheduler.functionsToExecute.push( markupFunction  )
-        }else{
-          func()
-          if( Environment.annotations === true )
-            markupFunction()
-        }
-      } catch (e) {
-        console.log( e )
-        Environment.log( 'ERROR', e )
-      }
+    'Ctrl-Enter'(cm) {
+      Environment.executeCode(cm, { 
+        immediate: false, 
+        findBlock: false, 
+        bindTrack: true 
+      })
     },
-    'Alt-Enter'( cm ) {
-      try {
-        let selectedCode = Environment.getSelectionCodeColumn( cm, true )
 
-        Environment.flash( cm, selectedCode.selection )
-        
-        let func = new Function( selectedCode.code ).bind( Gibber.currentTrack ),
-            markupFunction = () => { 
-              Environment.codeMarkup.process( 
-                selectedCode.code, 
-                selectedCode.selection, 
-                cm, 
-                Gibber.currentTrack 
-              ) 
-            }
-        
-        markupFunction.origin  = func
-
-        if( !Environment.debug ) {
-          Gibber.Scheduler.functionsToExecute.push( func );
-
-          if( Environment.annotations === true )
-            Gibber.Scheduler.functionsToExecute.push( markupFunction  )
-        }else{
-          func()
-
-          if( Environment.annotations === true )
-            markupFunction()
-        }
-      } catch (e) {
-        console.log( e )
-        Environment.log( 'ERROR', e )
-      }
+    'Alt-Enter'(cm) {
+      Environment.executeCode(cm, { 
+        immediate: false, 
+        findBlock: true, 
+        bindTrack: true 
+      })
     },
     'Ctrl-.'( cm ) {
       Gibber.clear()
@@ -540,6 +543,142 @@ let Environment = {
           eval( this.values.onload )
         }catch(e) {
           Environment.log( 'There was an error running your preload code:\n' + Enviroment.Storage.values.onload )
+        }
+      }
+    }
+  },
+
+  // 代码执行逻辑函数
+  executeCodeLogic(code, bindTrack, immediate) {
+    // 创建执行函数
+    const func = bindTrack ? 
+      new Function(code).bind(Gibber.currentTrack) :
+      new Function(code)
+    
+    // 执行逻辑
+    if (immediate || Environment.debug) {
+      // 立即执行
+      try {
+        const result = func()
+        return { 
+          executed: true, 
+          immediate: true, 
+          result, 
+          func 
+        }
+      } catch (error) {
+        return { 
+          executed: false, 
+          immediate: true, 
+          error, 
+          func 
+        }
+      }
+    } else {
+      // 添加到调度器
+      const isConnected = Gibber.Communication.connected.live || 
+                         Gibber.Communication.connected.max
+      
+      if (isConnected) {
+        Gibber.Scheduler.functionsToExecute.push(func)
+        return { 
+          executed: false, 
+          scheduled: true, 
+          scheduler: 'live', 
+          func 
+        }
+      } else {
+        try {
+          const result = func()
+          return { 
+            executed: true, 
+            immediate: true, 
+            result, 
+            func 
+          }
+        } catch (error) {
+          return { 
+            executed: false, 
+            immediate: true, 
+            error, 
+            func 
+          }
+        }
+      }
+    }
+  },
+
+  // 代码标记函数
+  markupCode(code, codeRegion, cm, currentTrack, immediate = false) {
+    // 执行逻辑
+    if (immediate || Environment.debug) {
+      // 立即执行
+      try {
+        // 执行代码标记处理
+        Environment.codeMarkup.process(
+          code,
+          codeRegion,
+          cm,
+          currentTrack
+        )
+        return { 
+          executed: true, 
+          immediate: true 
+        }
+      } catch (error) {
+        console.log(error);
+        return { 
+          executed: false, 
+          immediate: true, 
+          error 
+        }
+      }
+    }
+    else {
+      // 添加到调度器
+      const isConnected = Gibber.Communication.connected.live || 
+                         Gibber.Communication.connected.max
+      
+      if (isConnected) {
+        // 创建标记函数并添加到调度器
+        const markupFunction = () => {
+          try {
+            Environment.codeMarkup.process(
+              code,
+              codeRegion,
+              cm,
+              currentTrack
+            )
+          } catch (error) {
+            console.error('Markup execution error:', error)
+          }
+        }
+        
+        Gibber.Scheduler.functionsToExecute.push(markupFunction)
+        return { 
+          executed: false, 
+          scheduled: true, 
+          scheduler: 'live' 
+        }
+      } else {
+        // 本地执行
+        try {
+          Environment.codeMarkup.process(
+            code,
+            codeRegion,
+            cm,
+            currentTrack
+          )
+          return { 
+            executed: true, 
+            immediate: true 
+          }
+        } catch (error) {
+          return { 
+            executed: false, 
+            immediate: true, 
+            error 
+          }
         }
       }
     }

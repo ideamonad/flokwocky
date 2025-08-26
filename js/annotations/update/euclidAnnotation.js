@@ -106,13 +106,23 @@ module.exports = ( patternObject, marker, className, cm, track ) => {
   }
 
   patternObject.clear = () => {
+    //soloit
+    if( !patternObject.commentMarker ) {
+      return;
+    }
+
     const commentPos = patternObject.commentMarker.find()
 
     // if this gets called twice...
     if( commentPos === undefined ) return
 
-    cm.replaceRange( '', commentPos.from, { line:commentPos.to.line, ch:commentPos.to.ch+1 } )
-    patternObject.commentMarker.clear()
+    // 结尾的位置为什么要+1?
+    // cm.replaceRange( '', commentPos.from, { line:commentPos.to.line, ch:commentPos.to.ch+1 } )
+    cm.replaceRange( '', commentPos.from, { line:commentPos.to.line, ch:commentPos.to.ch } )
+
+    patternObject.commentMarker.clear();
+    //soloist
+    delete patternObject.commentMarker;
   }
 
   return update 

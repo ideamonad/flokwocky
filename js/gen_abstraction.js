@@ -51,7 +51,11 @@ const defineMethod = function( obj, methodName, param, priority=0, mode='interna
   obj[ methodName ].seq = function( values, timings, id=0, delay=0, mode='internal' ) {
     if( obj.sequences[ methodName ] === undefined ) obj.sequences[ methodName ] = []
 
-    if( obj.sequences[ methodName ][ id ] !== undefined ) obj.sequences[ methodName ][ id ].clear()
+    if( obj.sequences[ methodName ][ id ] !== undefined ) {
+      // soloist
+      obj.sequences[ methodName ][ id ].clear()
+      delete obj.sequences[ methodName ][ id ];
+    }
 
     const seq = Gibber.Seq( values, timings, methodName, obj, priority, mode )
     obj.sequences[ methodName ][ id ] = seq 
@@ -138,7 +142,8 @@ module.exports = function( Gibber ) {
             let _input =  genish.param( input )
             defineMethod( this, inputNum, _input )
             inputs.push( _input )
-          }else{
+          }
+          else{
             inputs.push( input )
           }
         }
@@ -149,7 +154,8 @@ module.exports = function( Gibber ) {
       let ugen
       if( mode === 'genish' || __gen.enabled === false ) {
         ugen = genish[ this.name ]( ...inputs ) 
-      }else{
+      }
+      else{
         ugen = genfunctions[ this.name ]( ...inputs )
       }
 
@@ -191,6 +197,7 @@ module.exports = function( Gibber ) {
     ],
     ugens:{},
   
+    // soloist: what the fuck is this?
     // determine whether or not gen is licensed
     // look for error message in environment.js
     checkForLicense() {

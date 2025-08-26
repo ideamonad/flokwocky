@@ -79,8 +79,9 @@ const Marker = {
     state.cm = codemirror
     state.cm.__state = state
 
+
     const parsed = acorn.parse( code, Marker.parsingOptions )
-      
+    
     parsed.body.forEach( node => {
       state.length = 0
       walk.recursive( node, state, Marker.visitors )

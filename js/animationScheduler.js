@@ -55,8 +55,8 @@ let Scheduler = {
       // call recursively
       this.run( timestamp )
     }
-
-    if( Gibber.Environment.codeMarkup.waveform.widgets.dirty === true ) {
+    
+    if( Gibber.Environment.codeMarkup.waveform.widgets.dirty === true ) {      
       Gibber.Environment.codeMarkup.waveform.drawWidgets()
     }
   },

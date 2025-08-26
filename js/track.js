@@ -105,7 +105,8 @@ let Track = {
       }
     }
 
-    if( Gibber.isStandalone === true ) 
+    // stupid!!! ugly!!!
+    // if( Gibber.isStandalone === true ) 
       Gibber.Environment.codeMarkup.prepareObject( track ) 
 
     Gibber.addSequencingToMethod( track, 'note', 0 )

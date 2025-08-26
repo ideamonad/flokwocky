@@ -385,7 +385,12 @@ let seqclosure = function( Gibber ) {
     clear() {
       this.stop()
 
-      if( this.timings !== undefined && typeof this.timings.clear === 'function' ) this.timings.clear()
+      if( this.timings !== undefined && typeof this.timings.clear === 'function' ){
+        // soloist
+        this.timings.clear();
+        // delete this.timings;
+      }
+
       if( typeof this.values.clear  === 'function' ) this.values.clear()
     },
     

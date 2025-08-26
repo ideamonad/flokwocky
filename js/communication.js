@@ -57,6 +57,7 @@ let Communication = {
 
     if ( 'WebSocket' in window ) {
       //Gibber.log( 'Connecting' , this.querystring.host, this.querystring.port )
+      
       if( Gibber.isStandalone === true ) {
         if( this.connectMsg === null ) { 
           this.connectMsg = Gibber.log( 'connecting' )
@@ -85,7 +86,8 @@ let Communication = {
         // apparently this first reply is necessary
         wsocket.send( 'update on' )
 
-        if( Gibber.isStandalone )
+        // soloist
+        // if( Gibber.isStandalone )
           Gibber.Environment.setServer( clientName )
       }.bind( Communication )
 
@@ -145,10 +147,13 @@ let Communication = {
       const schema = json.signals !== undefined ? 'max' : 'live'
 
       if( Communication.callbacks.schemas[ schema ] ) {
-        Communication.callbacks.schemas[ schema ]( JSON.parse( data ) )
+        Communication.callbacks.schemas[ schema ]( json )
       }
-    }else if( _msg.data.includes( 'snapshot' ) ) {
-      if( Gibber.isStandalone === true ) {
+    }
+    else if( _msg.data.includes( 'snapshot' ) ) {
+      // soloist
+      {
+      // if( Gibber.isStandalone === true ) {
         data = _msg.data.substr( 9 ).split(' ')
 
         // if we're not using genish.js for modulation...
@@ -170,7 +175,8 @@ let Communication = {
         }
       }
       return
-    }else{
+    }
+    else{
       msg = _msg.data.split( ' ' )
 
       isLiveMsg = msg.length > 2
@@ -272,6 +278,8 @@ let Communication = {
       
       const socket = to === 'live' ? Communication.liveSocket : Communication.maxSocket
 
+      console.log("send", code);
+      console.log(new Error().stack);
       socket.send( code )
     }else{
       Gibber.log( `socket ${to} is not ready for messaging.` )

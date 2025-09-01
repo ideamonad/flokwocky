@@ -139,6 +139,9 @@ let Communication = {
 
   handleMessage( _msg, socket ) {
     let id, key, data, msg, isLiveMsg=true
+
+    // soloist debug
+    // console.log("--- handleMessage", _msg.data);
     
     if( _msg.data.charAt( 0 ) === '{' ) {
       data = _msg.data
@@ -281,6 +284,7 @@ let Communication = {
       
       const socket = to === 'live' ? Communication.liveSocket : Communication.maxSocket
 
+      // soloist debug
       if(this.__count === undefined) { 
         this.__count = 0
       }

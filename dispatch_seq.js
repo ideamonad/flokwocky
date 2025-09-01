@@ -11,7 +11,7 @@ function play(mode)
 {
   m_play = mode;
   if(m_play === 0) {
-	m_events = [];
+	m_events.length = 0;
   }
 }
 	
@@ -29,21 +29,20 @@ function add()
 
 function dispatch(start, end)
 {
-  var during = function (e) {
-    return (e[0] >= start && e[0] <= end);
-  };
-
-  var notDuring = function (e) {
-	return !during(e);
-  };
-
-  var focus = m_events.filter(during);
-  m_events = m_events.filter(notDuring);
-
-  for(var index in focus) {
-	var e = focus[index];
-	e.splice(0, 1);
-    outlet(0, e); 
+  for(var index in m_events) {
+	var e = m_events[index];
+	if(e[0] >= start && e[0] <= end) {
+	  e.splice(0, 1);  
+      outlet(0, e);
+      e.__played = true; 	  
+	}
+  }
+	
+  for(var index = m_events.length - 1; index >= 0; --index ) {
+	var e = m_events[index];
+	if(e.__played===true) {
+      m_events.splice(index, 1);
+	}
   }
 }
 

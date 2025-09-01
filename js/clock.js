@@ -48,9 +48,11 @@ let Scheduler = {
     localStorage.setItem( 'sync', mode )
   },
 
-  init( __Gibber ) {
+  init( __Gibber, sync='live' ) {
     Gibber = __Gibber
-    const sync = localStorage.getItem( 'sync' )
+
+    // soloist: 这是啥时候存的？
+    // const sync = localStorage.getItem( 'sync' )
 
     if( sync !== null && sync !== undefined ) { 
       this.sync( sync )
@@ -62,8 +64,9 @@ let Scheduler = {
           case 'max':      document.querySelector('#maxSyncRadio').setAttribute( 'checked', true ); break;
         }
       }
-    }else{
-      this.sync( 'max' )
+    }
+    else{
+      this.sync( 'live' )
     }
 
     this.animationClock = Gibber.Environment.animationClock
@@ -167,16 +170,18 @@ let Scheduler = {
     })
   },
 
-  seq( beat, from='max' ) {
+  seq( beat, from='live' ) {
     if( Scheduler.__sync__ === from ) {
       beat = parseInt( beat )
-
+      
       if( beat === 1 ) {
         for( let func of Scheduler.functionsToExecute ) {
           try {
             func()
-          } catch( e ) {
+          } 
+          catch( e ) {
             console.error( 'error with user submitted code:', e )
+            console.error(e.stack);
           }
         }
         Scheduler.functionsToExecute.length = 0

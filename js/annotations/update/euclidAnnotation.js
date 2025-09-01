@@ -1,8 +1,87 @@
 const Utility = require( '../../utility.js' )
 const $ = Utility.create
 
+const newFunc = ( patternObject, marker, className, cm, track ) => {
+  let val ='/* ' + patternObject.values.join('')  + ' */',
+      pos = marker.find(),
+      end = Object.assign( {}, pos.to ),
+      annotationStartCh = pos.from.ch + 3,
+      annotationEndCh   = annotationStartCh + 1,
+      commentMarker
 
-module.exports = ( patternObject, marker, className, cm, track ) => {
+  end.ch = pos.from.ch + val.length
+  pos.to.ch -= 1
+  
+  commentMarker = cm.attachComment( pos.from, pos.from, val, className );
+
+  patternObject.commentMarker = commentMarker;
+
+  track.markup.textMarkers[ className ] = {}
+
+  let mark = () => {
+    for( let i = 0; i < patternObject.values.length; i++ ) {
+      const offset = i + 3;
+      commentMarker.setContentClassName(offset, offset + 1, `${className}_${i}`);
+      track.markup.textMarkers[ className ][ i ] = commentMarker;
+    }
+  }
+
+  mark()
+
+  let count = 0, span, update, activeSpans = []
+
+  update = () => {
+    let currentIdx = count++ % patternObject.values.length
+
+    if( span !== undefined ) {
+      span.remove( 'euclid0' )
+    }
+
+    let spanName = `.${className}_${currentIdx}`,
+        currentValue = patternObject.values[ currentIdx ]
+
+    span = $( spanName )
+
+    // deliberate ==
+    if( currentValue == 1 ) {
+      span.add( 'euclid1' )
+      activeSpans.push( span )
+      setTimeout( ()=> { 
+        activeSpans.forEach( _span => _span.remove( 'euclid1' ) )
+        activeSpans.length = 0 
+      }, 50 )
+    }else{
+      span.add( 'euclid0' )
+    }
+  }
+
+  patternObject._onchange = () => {
+    let delay = Utility.beatsToMs( 1,  Gibber.Scheduler.bpm )
+
+    Gibber.Environment.animationScheduler.add( () => {
+      let newComment ='/* ' + patternObject.values.join('')  + ' */';
+      patternObject.commentMarker.setComment(newComment);
+      mark()
+    }, delay ) 
+  }
+
+  patternObject.clear = () => {
+    if( !patternObject.commentMarker ) {
+      return;
+    }
+
+    patternObject.commentMarker.clear();
+    delete patternObject.commentMarker;
+
+    console.log("----euclidAnnotation clear");
+    // console.log(new Error().stack);
+
+  }
+
+  return update 
+}
+
+const oldFunc = ( patternObject, marker, className, cm, track ) => {
   let val ='/* ' + patternObject.values.join('')  + ' */',
       pos = marker.find(),
       end = Object.assign( {}, pos.to ),
@@ -128,3 +207,4 @@ module.exports = ( patternObject, marker, className, cm, track ) => {
   return update 
 }
 
+module.exports = newFunc;

@@ -188,7 +188,8 @@ let Communication = {
 
         if( key === 'err' ) data = data.join(' ')
 
-      }else{
+      }
+      else{
         id = 0
         key = msg[ 0 ]
         if( key === 'err' ) {
@@ -216,7 +217,8 @@ let Communication = {
       case 'seq' :
         if( data === undefined ) {
           console.log( 'faulty ws seq message', _msg.data )
-        }else{
+        }
+        else{
           const from = socket === Communication.liveSocket ? 'live' : 'max' 
           Gibber.Scheduler.seq( data, socket.clientName );
         }
@@ -272,16 +274,29 @@ let Communication = {
   },
 
   send( code, to='live' ) {
+
     if( Communication[ to + 'Socket' ].readyState === 1 ) {
-      //if( code === true ) debugger
-      if( Communication.debug.output ) Gibber.log( 'beat:', Gibber.Scheduler.currentBeat, 'msg:', code  )
+      if( Communication.debug.output ) 
+        Gibber.log( 'beat:', Gibber.Scheduler.currentBeat, 'msg:', code  )
       
       const socket = to === 'live' ? Communication.liveSocket : Communication.maxSocket
 
-      console.log("send", code);
-      console.log(new Error().stack);
-      socket.send( code )
-    }else{
+      if(this.__count === undefined) { 
+        this.__count = 0
+      }
+      else {
+        this.__count++;
+      }
+
+      const __count = this.__count;
+
+      // soloist
+      // console.log(`--- #${__count} send`, code);
+      // console.log(new Error().stack);
+      
+      socket.send(code)
+    }
+    else{
       Gibber.log( `socket ${to} is not ready for messaging.` )
     }
   },

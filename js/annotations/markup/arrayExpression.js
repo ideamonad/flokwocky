@@ -170,7 +170,10 @@ module.exports = function( Marker ) {
     if( patternObject.clear !== undefined )  __clear = patternObject.clear
 
     patternObject.clear = () => {
-      if( highlighted.className !== null ) { $( highlighted.className ).remove( 'annotation-border' ) }
+      if( highlighted.className !== null ) 
+      { 
+        $( highlighted.className ).remove( 'annotation-border' ) 
+      }
       cycle.clear()
       patternObject.markers.forEach( marker => marker.clear() )
       if( __clear !== null ) __clear()

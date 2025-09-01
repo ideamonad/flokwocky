@@ -30,8 +30,10 @@ let Scheduler = {
     
     try{
       evt.func()
-    }catch(e) {
-      console.log( 'annotation error:', e.toString() )
+    }
+    catch(e) {
+      console.error( 'annotation error:', e.toString() )
+      console.error(e.stack);
     }
   },
 

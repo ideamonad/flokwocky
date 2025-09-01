@@ -16,43 +16,59 @@ module.exports = function( Marker ) {
     Identifier( node, state, cb ) {
       state.push( strip( node.name ) )
     },
+
     AssignmentExpression( expression, state, cb ) {
       // the only assignments we're interested in for annotation purposes are
       // wavepatterns / gen(ish) expressions, and standalone objects like
       // Steps / Arp / Scores. Everything else we can ignore e.g. bass = tracks[0]
 
       // first check to see if the right operand is a callexpression
-      if( expression.right.type === 'CallExpression' ) {
-
+      if( expression.right.type === 'CallExpression' 
+        && Marker.standalone[expression.right.callee.name])
+      {
         // if standalone object (Steps, Arp, Score etc.)
-        if( Marker.standalone[ expression.right.callee.name ] ) {
 
-          const obj = window[ expression.left.name ]
-          if( obj.markup === undefined ) Marker.prepareObject( obj )
+        const obj = window[expression.left.name]
 
-          Marker.standalone[ expression.right.callee.name ]( 
-            expression.right, 
-            state.cm,
-            obj,
-            expression.left.name,
-            state,
-            cb
-          )            
-        }else{
-          // if it's a gen~ object we need to store a reference so that we can create wavepattern
-          // annotations when appropriate.
-          const left = expression.left
-          const right= expression.right
-          
-          Marker.globalIdentifiers[ left.name ] = right
-
-          // XXX does this need a track object? passing null...
-          //  Marker.processGen( expression, state.cm, null)
-
+        if (obj.markup === undefined) {
+          Marker.prepareObject(obj)
         }
-      }
 
-      
+        Marker.standalone[expression.right.callee.name](
+          expression.right,
+          state.cm,
+          obj,
+          expression.left.name,
+          state,
+          cb
+        )            
+        // else {
+        //   // soloist: 处理gen？
+        //   // if it's a gen~ object we need to store a reference so that we can create wavepattern
+        //   // annotations when appropriate.
+
+        //   // const left = expression.left
+        //   // const right= expression.right
+          
+        //   Marker.globalIdentifiers[ left.name ] = right
+
+        //   // soloist: 为啥不干了
+        //   // XXX does this need a track object? passing null...
+        //   //  Marker.processGen( expression, state.cm, null)
+
+        // }
+      }
+      else
+      {
+        const obj = window[ expression.left.name ]         
+        if( obj && obj.markup === undefined )
+        { 
+          Marker.prepareObject( obj )
+        }
+
+        // Marker.globalIdentifiers[ expression.left.name ] = expression.right
+        cb(expression.right, state);
+      }
     },
 
     CallExpression( node, state, cb ) {
@@ -82,10 +98,12 @@ module.exports = function( Marker ) {
           const seq = Marker.getObj( state.slice( 0, endIdx ), true, seqNumber )
 
           Marker.markPatternsForSeq( seq, node.arguments, state, cb, node, seqNumber )
-        }else{
+        }
+        else{
           Marker.processGen( node, state.cm, null, null, null, state.indexOf('seq') > -1 ? 0 : -1 )
         }
-      }else{
+      }
+      else{
         if( foundSequence === true ){
           const hasSeqNumber = node.arguments.length > 2
           
@@ -104,11 +122,11 @@ module.exports = function( Marker ) {
             state[1] = node.callee.object.arguments[0].value 
             seq = window.message( node.callee.object.arguments[0].value )
             Marker.markPatternsForSeq( seq, node.arguments, state, cb, node, seqNumber )
-          }else{
+          }
+          else{
             // this is the call to message(), which has one argument, the message prefix
             seq = window.message( node.arguments[0].value )
           }
-
         }
       }
 
@@ -124,7 +142,7 @@ module.exports = function( Marker ) {
           const unstripped = node.property.type === 'Identifier' ? node.property.name : node.property.raw 
           state.unshift( strip( unstripped ) )
         }
-        cb( node.object, state )
+        cb( node.object, state)
       }else{
         if( node.property !== undefined ) { // if the objects is an array member, e.g. tracks[0]
           state.unshift( strip( node.property.raw || node.property.name ) )

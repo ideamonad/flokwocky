@@ -61,28 +61,33 @@ let Live = {
       Live.processDevice( val, idx, track ) 
     })
     
-    if( track.devices[0] !== undefined ) {
-      if( track.devices[0].title.includes('gibberwocky') ) {
-        track.length = track.devices.length
-        track.devices.shift()
-        Array.prototype.shift.call( track )
-      }
-    }
+    // don't do this by stealth
+    // if( track.devices[0] !== undefined ) {
+    //   if( track.devices[0].title.includes('gibberwocky') ) {
+    //     track.length = track.devices.length
+    //     track.devices.shift()
+    //     Array.prototype.shift.call( track )
+    //   }
+    // }
+
     return track
   },
 
-  processDevice( device, idx, currentTrack ) {
+  processDevice( device, idx, currentTrack ) {    
     if( device.name === undefined ) {
       // XXX hack for wavetable bug
       //console.log( 'undefined device name, assuming wavetable:', device )
       device.name = 'Wavetable'
     }
 
-    let d = currentTrack.devices[ device.name ] = currentTrack.devices[ idx ] = currentTrack[ idx ] = { idx },
-        parameterCount = 0
+    let d = currentTrack.devices[ device.name ] 
+      = currentTrack.devices[ idx ] 
+      = currentTrack[ idx ] 
+      = { idx },
+      parameterCount = 0
     
-    //console.log( 'device', device ) 
-    if( device.type === 1 ) currentTrack.instrument = d
+    if( device.type === 1 ) 
+      currentTrack.instrument = d
 
     d.pickRandomParameter = ()=> {
       let idx = Gibber.Utility.rndi( 0, device.parameters.length - 1 ),
@@ -104,7 +109,8 @@ let Live = {
     Gibber.addSequencingToMethod( d, 'galumph' )
     Gibber.addSequencingToMethod( d, 'toggle' )
 
-    device.parameters.forEach( ( spec, idx ) => Gibber.addMethod( d, null, spec, currentTrack.id ) )
+    device.parameters.forEach( 
+      ( spec, idx ) => Gibber.addMethod( d, null, spec, currentTrack.id ) )
     d.parameters = device.parameters.slice( 0 )
     d.name = device.name
     d.title = device.title

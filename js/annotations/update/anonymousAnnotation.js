@@ -1,4 +1,34 @@
-module.exports = ( patternObject, marker, className, cm ) => {
+const newFunc = ( patternObject, marker, className, cm ) => {
+  // debugger;
+
+  patternObject.commentMarker = marker
+  
+  let update = () => {
+    if( !patternObject.commentMarker ){
+      return;
+    }
+
+    let patternValue = '' + patternObject.update.value.pop()
+
+    let val ='/* ' + patternValue + ' */'
+
+    // 换内容
+    patternObject.commentMarker.setComment(val);
+    patternObject.commentMarker.setClassName(className);
+  }
+
+  patternObject.clear = () => {
+    if( patternObject.commentMarker ){
+      patternObject.commentMarker.clear()
+      delete patternObject.commentMarker
+      console.log("anonymousAnnotation clear");
+    } 
+  }
+
+  return update
+}
+
+const oldFunc = ( patternObject, marker, className, cm ) => {
   patternObject.commentMarker = marker
   let update = () => {
     if( !patternObject.commentMarker ) return
@@ -15,6 +45,7 @@ module.exports = ( patternObject, marker, className, cm ) => {
     //pos.from.ch += 1
 
     cm.replaceRange( val, pos.from, pos.to )
+
 
     if( patternObject.commentMarker ) {
       //soloist
@@ -38,3 +69,4 @@ module.exports = ( patternObject, marker, className, cm ) => {
   return update
 }
 
+module.exports = newFunc;

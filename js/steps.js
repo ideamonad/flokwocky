@@ -45,6 +45,10 @@ let Steps = {
 
     return stepseq
   },
+
+  at(index) {
+    return this.seqs[index];
+  },
   
   addPatternMethods() {
     groupMethodNames.map( (name) => {

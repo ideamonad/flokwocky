@@ -106,10 +106,10 @@ const defineMethod = function( obj, methodName, param, priority=0, mode='interna
 
 const assignClient = function( node, client ) {
   if( typeof node === 'object' ) {
+    node.__client = client;
     if( node.inputs !== undefined ) {
       node.inputs.forEach( input => {
-        input.__client = client
-        assignClient( input )
+        assignClient( input, client )
       })
     }
   }
@@ -234,7 +234,8 @@ module.exports = function( Gibber ) {
 
       Gibber.subscribe( 'lom_update', ()=> {
         if( __gen.initialized === false ) {
-          __gen.checkForLicense()
+          // __gen.checkForLicense()
+          __gen.enabled = true;
           __gen.initialized = true
         }
       })

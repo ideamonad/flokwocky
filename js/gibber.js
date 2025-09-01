@@ -144,31 +144,52 @@ let Gibber = {
     }
   },
 
+  clearAllSeqs() {
+    for( let i = 0; i < this.Seq._seqs.length; i++ ){
+      this.Seq._seqs[ i ].stop()
+    }
+  },
+
+  clearTrackAllSeqs(trackID) {
+    for (let i = this.Seq._seqs.length - 1; i >= 0; i--) {
+      if (this.Seq._seqs[i].trackID === trackID) {
+        this.Seq._seqs[i].stop();
+        this.Seq._seqs.splice(i, 1);
+      }
+    }
+  },
+
   clear() {
     console.log("-----Gibber.clear");
 
-    for( let i = 0; i < this.Seq._seqs.length; i++ ){
-      this.Seq._seqs[ i ].clear()
-    }
-    
-    if( Gibber.currentTrack !== null && Gibber.isStandalone === true ) {
-      setTimeout( () => {
-        for( let key in Gibber.currentTrack.markup.textMarkers ) {
-          let marker = Gibber.currentTrack.markup.textMarkers[ key ]
+    // 先清除可视化标记
+    Gibber.Environment.clearVisualization()
 
-          if( Array.isArray( marker ) ) {
-            marker.forEach( m => m.clear() )
-          }else{
-            if( marker.clear ) marker.clear() 
-          }
-        }
-      }, 250 )
-    }
-    Gibber.Scheduler.clear()
+    Gibber.clearAllSeqs();
     Gibber.Gen.clearAll()
-    Gibber.Environment.clear()
     Gibber.publish( 'clear' )
+
+    Gibber.Scheduler.clear()
+
+    // if( Gibber.currentTrack !== null && Gibber.isStandalone === true ) {
+    //   setTimeout( () => {
+    //     for( let key in Gibber.currentTrack.markup.textMarkers ) {
+    //       let marker = Gibber.currentTrack.markup.textMarkers[ key ]
+
+    //       if( Array.isArray( marker ) ) {
+    //         marker.forEach( m => m.clear() )
+    //       }else{
+    //         if( marker.clear ) marker.clear() 
+    //       }
+    //     }
+    //   }, 250 )
+    // }
+
     // Gibber.initSingletons( window )
+  },
+
+  evalCode(cm, code, selection, option) {
+    return this.Environment.evalCode(cm, code, selection, option)
   },
 
   createPubSub() {
@@ -199,25 +220,28 @@ let Gibber = {
 
   addSequencingToMethod( obj, methodName, priority, overrideName, mode ) {
     
-    if( !obj.sequences ) obj.sequences = {}
-    if( overrideName === undefined || overrideName === null ) overrideName = methodName 
+    if( !obj.sequences ) 
+      obj.sequences = {}
+    if( overrideName === undefined || overrideName === null ) 
+      overrideName = methodName 
     
     let lastId = 0
-    if( mode !== undefined && (obj.__client === undefined || obj.__client === null ) ) obj.__client = mode
+    if( mode !== undefined && (obj.__client === undefined || obj.__client === null ) ) 
+      obj.__client = mode
 
     obj[ methodName ].seq = function( values, timings, id=0, delay=0 ) {
       let seq
       lastId = id
 
-      if( obj.sequences[ methodName ] === undefined ) obj.sequences[ methodName ] = []
+      if( obj.sequences[ methodName ] === undefined ) 
+        obj.sequences[ methodName ] = []
 
       if( obj.sequences[ methodName ][ id ] ){
-        // soloist
         obj.sequences[ methodName ][ id ].clear();
-        delete obj.sequences[ methodName ][ id ];
       }
 
-      obj.sequences[ methodName ][ id ] = seq = Gibber.Seq( values, timings, overrideName, obj, priority, mode )
+      obj.sequences[ methodName ][ id ] = seq = 
+        Gibber.Seq( values, timings, overrideName, obj, priority, mode )
 
       // if the target is another sequencer (like for per-sequencer velocity control) it won't
       // have an id property.. use existing trackID property instead.
@@ -234,7 +258,8 @@ let Gibber = {
       seq.start()
 
       // avoid this for gibber objects that don't communicate with Live such as Scale
-      if( mode === 'live' && obj.id !== undefined ) Gibber.Communication.send( `select_track ${obj.id}` )
+      if( mode === 'live' && obj.id !== undefined ) 
+        Gibber.Communication.send( `select_track ${obj.id}` )
 
       // setup code annotations to place values and widget onto pattern object
       // not gen~ object
@@ -357,10 +382,6 @@ let Gibber = {
           // if( genAlreadyAssigned === false && mode !== 'midi' ) {
           if( mode !== 'midi' ) {
             Gibber.Gen.connected.push( __v )
-
-            console.log("!!!after push");
-            console.log(Gibber.Gen.connected.filter(
-              e => e.paramID === __id));
           }
 
           if( hasGen === true && mode !== 'midi' ) { 
@@ -515,6 +536,15 @@ let Gibber = {
             }
           }
         }
+
+        // soloist
+        // 补上返回值
+        if(typeof v.clear === 'function' 
+          && !v.stop) {
+          // 给v的clear方法增加一个stop的别名，注意this
+          v.stop = v.clear;
+        }
+        return v;
       }
       else{
         return v

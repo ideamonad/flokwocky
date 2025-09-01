@@ -133,16 +133,16 @@ let Gen  = {
     }
   },
 
-  // soloist added
   clearAll() {
-    console.log("****** gen clearAll");
-    console.log(Gibber.Communication.connected);
-    console.log(new Error().stack);
+    // console.log("****** gen clearAll");
+    // console.log(Gibber.Communication.connected);
+    // console.log(new Error().stack);
 
     for( let key in Gibber.Communication.connected ) {
       if( Gibber.Communication.connected[ key ] === true ) {
         for( let ugen of Gen.connected ) {
-          Gibber.Communication.send( `ungen ${ugen.paramID}`, key )
+          ugen.clear();
+          // Gibber.Communication.send( `ungen ${ugen.paramID}`, key )
         }
       }
     }
@@ -150,14 +150,39 @@ let Gen  = {
     Gen.connected.length = 0
   },
 
-  // soloist changed
+  clearAllVisualization() {
+    for( let key in Gibber.Communication.connected ) {
+      if( Gibber.Communication.connected[ key ] === true ) {
+        for( let ugen of Gen.connected ) {
+          ugen.clearVisualization();
+        }
+      }
+    }
+  },
+
   clear() {
-    console.log("****** gen clear");
+    // console.log("****** gen clear");
     // console.log(new Error().stack);
 
     const ugen = this;
-    console.log(ugen);
+    ugen.clearVisualization();
     Gibber.Communication.send( `ungen ${ugen.paramID}`, ugen.__client )
+  },
+
+  clearVisualization() {
+    console.log("****** gen clearVisualization");
+    // console.log(new Error().stack);
+    const ugen = this;
+    
+    // 清除波形可视化
+    if (ugen.paramID) {
+      let widget = Gibber.Environment.codeMarkup.waveform.widgets[ugen.paramID];
+      if (widget !== undefined && widget.mark !== undefined) {
+        widget.mark.clear();
+      }
+
+      delete Gibber.Environment.codeMarkup.waveform.widgets[ugen.paramID];
+    }
   },
 
   constants: {

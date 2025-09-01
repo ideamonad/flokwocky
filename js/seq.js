@@ -349,10 +349,11 @@ let seqclosure = function( Gibber ) {
       return this
     },
 
-    stop( delay = 0) {
+    stopRunning( delay = 0) {
       if( delay === 0 ) {
         this.running = false
-      }else{
+      }
+      else{
         Gibber.Utility.future( ()=> this.running = false, delay )
       }
     },
@@ -382,18 +383,29 @@ let seqclosure = function( Gibber ) {
       return this
     },
 
-    clear() {
-      this.stop()
-
+    stop() {
+      console.log("seq stop");
+      this.clear()
+    },
+    
+    clearVisualization() {
       if( this.timings !== undefined && typeof this.timings.clear === 'function' ){
         // soloist
         this.timings.clear();
-        // delete this.timings;
+        delete this.timings;
       }
 
-      if( typeof this.values.clear  === 'function' ) this.values.clear()
+      if( typeof this.values.clear  === 'function' )
+      {
+        this.values.clear()
+      }
     },
-    
+
+    clear() {
+      this.clearVisualization()
+      this.stopRunning()
+    },
+
     delay( v ) { 
       this.offset = v
       return this

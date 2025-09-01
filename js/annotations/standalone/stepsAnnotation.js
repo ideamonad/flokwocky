@@ -1,7 +1,102 @@
 const Utility = require( '../../utility.js' )
 const $ = Utility.create
 
-module.exports = function( node, cm, track, objectName, state, cb ) {
+const newFunc = function( node, cm, track, objectName, state, cb ) {
+  const Marker = Gibber.Environment.codeMarkup // tsk tsk tsk global...
+  const steps = node.arguments[ 0 ].properties
+    
+  track.markup.textMarkers[ 'step' ] = []
+  track.markup.textMarkers[ 'step' ].children = []
+
+  const mark = ( _step, _key, _cm, _track, _values, _commentMarker ) => {
+    for( let i = 0; i < _values.length; i++ ) {
+      const begin = i + 3;
+      const end = begin + 1;
+      let posMark = _commentMarker.setContentClassName( begin, end, `step_${_key}_${i}` );
+      _track.markup.textMarkers.step[ _key ].pattern[ i ] = posMark
+    }
+  }
+
+  for( let key in steps ) {
+    let step = steps[ key ].value
+
+    if(step) {
+      step.loc.start.line += Marker.offset.vertical - 1
+      step.loc.end.line   += Marker.offset.vertical - 1
+      // step.loc.start.ch   = step.loc.start.column + 1
+      // step.loc.end.ch     = step.loc.end.column - 1
+      step.loc.start.ch   = step.loc.start.column
+      step.loc.end.ch     = step.loc.end.column
+
+      let count = 0, span, update,
+        _key = steps[key].key.value,
+        patternObject = window[objectName].seqs[_key].values
+
+      const comment = '/* ' + patternObject.values.join('') + ' */';
+      const commentMarker = cm.attachComment(
+          step.loc.end,
+          step.loc.end,
+          comment,
+          `step${key}`)
+
+      track.markup.textMarkers.step[ key ] = commentMarker
+      track.markup.textMarkers.step[ key ].pattern = []
+
+      mark( step, key, cm, track, patternObject.values, commentMarker );
+
+      patternObject.commentMarker = commentMarker;
+
+      update = () => {
+        let currentIdx = update.currentIndex // count++ % step.value.length
+
+        if( span !== undefined ) {
+          span.remove( 'euclid0' )
+          span.remove( 'euclid1' )
+        }
+
+        let spanName = `.step_${key}_${currentIdx}`,
+          currentValue = patternObject.update.value.pop() //step.value[ currentIdx ]
+
+        span = $( spanName )
+
+        if( currentValue !== Gibber.Seq.DO_NOT_OUTPUT ) {
+          span.add( 'euclid1' )
+          setTimeout( ()=> { span.remove( 'euclid1' ) }, 50 )
+        }
+
+        span.add( 'euclid0' )
+      }
+      
+      patternObject._onchange = () => {
+        let delay = Utility.beatsToMs( 1,  Gibber.Scheduler.bpm )
+        const comment = '/* ' + patternObject.values.join('') + ' */';
+        Gibber.Environment.animationScheduler.add( () => {
+          if( patternObject.commentMarker )
+          {
+            patternObject.commentMarker.setComment( comment );
+            mark( step, key, cm, track, patternObject.values, patternObject.commentMarker );
+          }
+        }, delay ) 
+      }
+
+      patternObject.clear = () => {
+        if( patternObject.commentMarker ){
+          patternObject.commentMarker.clear()
+          delete patternObject.commentMarker
+          console.log("stepsAnnotation clear");
+        } 
+      }
+    
+      patternObject.update = update
+      patternObject.update.value = []
+
+      Marker._addPatternFilter( patternObject )
+    }
+  }
+
+}  
+
+const oldFunc = function( node, cm, track, objectName, state, cb ) {
   const Marker = Gibber.Environment.codeMarkup // tsk tsk tsk global...
   const steps = node.arguments[ 0 ].properties
 
@@ -26,8 +121,10 @@ module.exports = function( node, cm, track, objectName, state, cb ) {
     if( step && step.value ) { // ensure it is a correctly formed step
       step.loc.start.line += Marker.offset.vertical - 1
       step.loc.end.line   += Marker.offset.vertical - 1
-      step.loc.start.ch   = step.loc.start.column + 1
-      step.loc.end.ch     = step.loc.end.column - 1
+      // step.loc.start.ch   = step.loc.start.column + 1
+      // step.loc.end.ch     = step.loc.end.column - 1
+      step.loc.start.ch   = step.loc.start.column
+      step.loc.end.ch     = step.loc.end.column
 
       let marker = cm.markText( step.loc.start, step.loc.end, { className:`step${key}` } )
       track.markup.textMarkers.step[ key ] = marker
@@ -60,11 +157,13 @@ module.exports = function( node, cm, track, objectName, state, cb ) {
 
         span.add( 'euclid0' )
       }
-
+      
       patternObject._onchange = () => {
         let delay = Utility.beatsToMs( 1,  Gibber.Scheduler.bpm )
         Gibber.Environment.animationScheduler.add( () => {
-          marker.doc.replaceRange( patternObject.values.join(''), step.loc.start, step.loc.end )
+          // 当step的value发生变化时，用replaceRange来更新代码中的字符串内容
+          // marker.doc.replaceRange( patternObject.values.join(''), step.loc.start, step.loc.end )          
+          cm.replaceRange( patternObject.values.join(''), step.loc.start, step.loc.end )          
           mark( step, key, cm, track )
         }, delay ) 
       }
@@ -78,3 +177,4 @@ module.exports = function( node, cm, track, objectName, state, cb ) {
 
 }  
 
+module.exports = newFunc;

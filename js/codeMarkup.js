@@ -27,7 +27,9 @@ const Marker = {
     this.visitors = this.__visitors( this )
   },
 
-  clear() { Marker.waveform.clear() },
+  clear() { 
+    Marker.waveform.clear() 
+  },
   
   prepareObject( obj ) {
     obj.markup = {
@@ -89,6 +91,11 @@ const Marker = {
   },
   
   markPatternsForSeq( seq, nodes, state, cb, container, seqNumber = 0 ) {
+    // soloist: 有可能此时seq已经停止了，所以需要判断一下
+    if(seq.running === false) {
+      return;
+    }
+
     const valuesNode = nodes[0]
     valuesNode.offset = Marker.offset
     
@@ -263,9 +270,8 @@ const Marker = {
   standalone: {
     Score: require( './annotations/standalone/scoreAnnotation.js' ),
     Steps: require( './annotations/standalone/stepsAnnotation.js' ),
-    HexSteps: require( './annotations/standalone/hexStepsAnnotations.js' )
+    HexSteps: require( './annotations/standalone/hexStepsAnnotations.js' ),
   },
-
 
   _updatePatternContents( pattern, patternClassName, track ) {
     let marker, pos, newMarker
@@ -286,6 +292,8 @@ const Marker = {
 
       const itemClass = document.querySelector('.' + marker.className.split(' ')[0] )
       itemClass.innerText = pattern.values[ 0 ]
+
+      
       //marker.doc.replaceRange( '' + pattern.values[ 0 ], pos.from, pos.to )
       // newMarker = marker.doc.markText( pos.from, pos.to, { className: patternClassName + ' annotation-border' } )
       // track.markup.textMarkers[ patternClassName ] = newMarker
